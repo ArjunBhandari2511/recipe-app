@@ -1,4 +1,5 @@
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Animated, FlatList, Image, Platform, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -64,6 +65,7 @@ const trendingBadges = [
 ];
 
 export default function PopularRecipeScreen() {
+  const router = useRouter();
   const [dish, setDish] = useState('');
   const [loading, setLoading] = useState(false);
   const scaleAnim = useRef(new Animated.Value(1)).current;
@@ -85,7 +87,15 @@ export default function PopularRecipeScreen() {
       setLoading(true);
       setTimeout(() => {
         setLoading(false);
-        Alert.alert('Find Recipe', `Searching for: ${dish || '...'}`);
+        if (dish) {
+          // Navigate to Recipe screen with selected dish
+          router.push({
+            pathname: '/Recipe',
+            params: { source: 'popular', recipeName: dish }
+          });
+        } else {
+          Alert.alert('Invalid Entry', 'Please enter a dish name to search.');
+        }
       }, 1200);
     });
   };
@@ -149,8 +159,17 @@ export default function PopularRecipeScreen() {
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.trendingList}
-                              renderItem={({ item }) => (
-                <View style={styles.trendingCard}>
+              renderItem={({ item }) => (
+                <TouchableOpacity 
+                  style={styles.trendingCard}
+                  onPress={() => {
+                    router.push({
+                      pathname: '/Recipe',
+                      params: { source: 'popular', recipeName: item.name }
+                    });
+                  }}
+                  activeOpacity={0.85}
+                >
                   <Image source={item.image} style={styles.trendingImage} />
                   <View style={styles.badgeContainer}>
                     <Text style={styles.cornerBadge}>{item.tag}</Text>
@@ -158,7 +177,7 @@ export default function PopularRecipeScreen() {
                   <View style={styles.textOverlay}>
                     <Text style={styles.trendingName}>{item.name}</Text>
                   </View>
-                </View>
+                </TouchableOpacity>
               )}
               />
             </View>

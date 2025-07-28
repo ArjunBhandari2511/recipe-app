@@ -1,5 +1,6 @@
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
 import { useRef, useState } from 'react';
 import { Animated, Platform, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -809,10 +810,15 @@ export default function MealPlannerScreen() {
       {stage4Data.trackMacros && (
         <View style={styles.macroSection}>
           <Text style={styles.macroHeading}>Macro Distribution</Text>
-          
+          <View style={{ alignItems: 'center', marginBottom: 16 }}>
+            <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#333' }}>
+              {stage4Data.carbsPercentage}/{stage4Data.proteinPercentage}/{stage4Data.fatsPercentage}
+            </Text>
+            <Text style={{ color: '#888', fontSize: 14 }}>Carbs / Protein / Fats</Text>
+          </View>
           <View style={styles.macroSliderContainer}>
             <View style={styles.macroHeader}>
-              <Text style={styles.macroLabel}>Carbohydrates: {stage4Data.carbsPercentage}%</Text>
+              <Text style={styles.macroLabel}>Carbohydrates: {stage4Data.carbsPercentage}</Text>
               <View style={styles.macroControls}>
                 <TouchableOpacity 
                   style={styles.macroButton} 
@@ -842,7 +848,7 @@ export default function MealPlannerScreen() {
 
           <View style={styles.macroSliderContainer}>
             <View style={styles.macroHeader}>
-              <Text style={styles.macroLabel}>Protein: {stage4Data.proteinPercentage}%</Text>
+              <Text style={styles.macroLabel}>Protein: {stage4Data.proteinPercentage}</Text>
               <View style={styles.macroControls}>
                 <TouchableOpacity 
                   style={styles.macroButton} 
@@ -872,7 +878,7 @@ export default function MealPlannerScreen() {
 
           <View style={styles.macroSliderContainer}>
             <View style={styles.macroHeader}>
-              <Text style={styles.macroLabel}>Fats: {stage4Data.fatsPercentage}%</Text>
+              <Text style={styles.macroLabel}>Fats: {stage4Data.fatsPercentage}</Text>
               <View style={styles.macroControls}>
                 <TouchableOpacity 
                   style={styles.macroButton} 
@@ -902,7 +908,7 @@ export default function MealPlannerScreen() {
 
           <View style={styles.macroTotal}>
             <Text style={styles.macroTotalText}>
-              Total: {stage4Data.carbsPercentage + stage4Data.proteinPercentage + stage4Data.fatsPercentage}%
+              Total: {stage4Data.carbsPercentage + stage4Data.proteinPercentage + stage4Data.fatsPercentage}
             </Text>
           </View>
         </View>
@@ -1093,7 +1099,7 @@ export default function MealPlannerScreen() {
         <TouchableOpacity style={[styles.button, styles.backButton]} onPress={handleBack}>
           <Text style={styles.backButtonText}>Back</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.button} onPress={() => {/* handle generate plan here */}}>
+        <TouchableOpacity style={styles.button} onPress={() => { router.push('/MealPlan'); }}>
           <Text style={styles.buttonText}>Generate Plan</Text>
         </TouchableOpacity>
       </View>

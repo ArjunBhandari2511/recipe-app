@@ -24,6 +24,34 @@ export default function Layout() {
       <Tabs.Screen name="index" options={{ title: 'Home' }} />
       <Tabs.Screen name="PopularRecipe" options={{ title: 'Popular Recipes' }} />
       <Tabs.Screen name="MealPlanner" options={{ title: 'Meal Planner' }} />
+      <Tabs.Screen 
+        name="Recipe" 
+        options={{ 
+          title: 'Recipe',
+          href: null, // This hides it from the tab bar
+        }} 
+      />
+      <Tabs.Screen 
+        name="MealPlan" 
+        options={{ 
+          title: 'Meal Plan',
+          href: null, // This hides it from the tab bar
+        }} 
+      />
+      <Tabs.Screen 
+        name="GroceryList" 
+        options={{ 
+          title: 'Grocery List',
+          href: null, // This hides it from the tab bar
+        }} 
+      />
+      <Tabs.Screen 
+        name="LoadingRecipe" 
+        options={{ 
+          title: 'Loading Recipe',
+          href: null, // This hides it from the tab bar
+        }} 
+      />
     </Tabs>
   );
 }

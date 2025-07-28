@@ -1,7 +1,8 @@
 import Slider from '@react-native-community/slider';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Platform, View as RNView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableNativeFeedback, TouchableOpacity, View } from 'react-native';
+import { Image, Platform, View as RNView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableNativeFeedback, TouchableOpacity, View } from 'react-native';
 import DropDownPicker from 'react-native-dropdown-picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ChefBro from '../assets/Chef-Bro.svg';
@@ -29,6 +30,8 @@ const CUISINE_OPTIONS = [
 ];
 
 export default function HomeScreen() {
+  const router = useRouter();
+  
   // Ingredients
   const [ingredient, setIngredient] = useState('');
   const [ingredients, setIngredients] = useState<string[]>([]);
@@ -47,6 +50,7 @@ export default function HomeScreen() {
   const [cuisine, setCuisine] = useState(null);
   const [cuisineOpen, setCuisineOpen] = useState(false);
   const [cuisineItems, setCuisineItems] = useState(CUISINE_OPTIONS);
+  const [loading, setLoading] = useState(false);
 
   const addIngredient = () => {
     if (ingredient.trim()) {
@@ -67,7 +71,7 @@ export default function HomeScreen() {
     setExcludes(excludes.filter((_, i) => i !== index));
   };
   const handleGenerate = () => {
-    Alert.alert('Recipe Generation', 'Recipe will be generated based on your preferences!');
+    router.push({ pathname: '/LoadingRecipe' as any });
   };
 
   const ButtonComponent = Platform.OS === 'android' ? TouchableNativeFeedback : TouchableOpacity;
@@ -237,6 +241,26 @@ export default function HomeScreen() {
             </RNView>
     </View>
         </ScrollView>
+        {loading && (
+          <View style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(255,255,255,0.85)',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+          }}>
+            <Image
+              source={require('../assets/UniqueRecipe.gif')}
+              style={{ width: 180, height: 180 }}
+              resizeMode="contain"
+            />
+            <Text style={{ marginTop: 16, fontSize: 18, color: '#FF6B6B', fontWeight: 'bold' }}>Generating your unique recipe...</Text>
+          </View>
+        )}
       </SafeAreaView>
     </LinearGradient>
   );
