@@ -1,50 +1,89 @@
-# Welcome to your Expo app 👋
+# Cravebuster - AI-Powered Recipe App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A beautiful React Native recipe app that generates personalized recipes using AI based on your available ingredients and preferences.
 
-## Get started
+## Features
 
-1. Install dependencies
+- **AI Recipe Generation**: Generate unique recipes based on available ingredients
+- **Personalized Preferences**: Set spice levels, dietary restrictions, and cuisine preferences
+- **Meal Planning**: Comprehensive 7-stage meal planning wizard
+- **Grocery Lists**: Organized shopping lists with progress tracking
+- **Popular Recipes**: Curated collection of popular recipes
+- **Nutrition Information**: Detailed nutrition facts for AI-generated recipes
 
+## AI Integration Setup
+
+This app uses Groq AI for recipe generation. To enable AI features:
+
+1. **Get a Groq API Key**:
+   - Visit [Groq Console](https://console.groq.com/)
+   - Sign up and create an API key
+
+2. **Configure Environment Variables**:
+   Create a `.env` file in the root directory:
+   ```
+   EXPO_PUBLIC_GROQ_API_KEY=your_groq_api_key_here
+   ```
+
+3. **Restart the Development Server**:
+   ```bash
+   npm start
+   ```
+
+## Installation
+
+1. Clone the repository
+2. Install dependencies:
    ```bash
    npm install
    ```
-
-2. Start the app
-
+3. Set up your API key (see AI Integration Setup above)
+4. Start the development server:
    ```bash
-   npx expo start
+   npm start
    ```
 
-In the output, you'll find options to open the app in a
+## Tech Stack
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+- **React Native** with Expo
+- **TypeScript** for type safety
+- **Groq AI** for recipe generation
+- **Expo Router** for navigation
+- **React Native Reanimated** for animations
+- **Linear Gradient** for beautiful UI
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## Project Structure
 
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```
+recipe-app/
+├── app/                    # Main app screens
+│   ├── index.tsx          # Home screen with recipe generation
+│   ├── Recipe.tsx         # Recipe display screen
+│   ├── MealPlanner.tsx    # Meal planning wizard
+│   ├── GroceryList.tsx    # Shopping list
+│   └── LoadingRecipe.tsx  # Loading screen
+├── src/
+│   ├── services/
+│   │   └── aiService.ts   # AI integration service
+│   └── context/
+│       └── RecipeContext.tsx # Recipe state management
+└── assets/                # Images, SVGs, and other assets
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Usage
 
-## Learn more
+1. **Generate Recipes**: Add ingredients, set preferences, and generate unique recipes
+2. **Plan Meals**: Use the meal planner to create personalized weekly meal plans
+3. **Shop Smart**: Use the grocery list to track your shopping progress
+4. **Explore Recipes**: Browse popular recipes for inspiration
 
-To learn more about developing your project with Expo, look at the following resources:
+## Contributing
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
 
-## Join the community
+## License
 
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+MIT License - see LICENSE file for details

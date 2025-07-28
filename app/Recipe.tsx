@@ -3,129 +3,120 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Platform, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { usePopularRecipe } from '../src/context/PopularRecipeContext';
+import { useRecipe } from '../src/context/RecipeContext';
+import { GeneratedRecipe } from '../src/services/aiService';
+import { PopularRecipe } from '../src/services/popularRecipeService';
 
-// Mock data - will be replaced with backend integration later
-const mockRecipeData = {
-  homeScreen: {
-    name: "Spiced Vegetable Curry",
-    prepTime: "15 mins",
-    cookTime: "30 mins",
-    serves: "4-6",
-    cuisine: "Indian",
+// Mock data for popular recipes (keeping this for popular recipe section)
+const mockPopularRecipeData: { [key: string]: GeneratedRecipe } = {
+  "Paneer Butter Masala": {
+    name: "Paneer Butter Masala",
+    prepTime: "20 mins",
+    cookTime: "25 mins",
+    serves: "4",
+    cuisine: "North Indian",
     ingredients: [
-      { name: "Onions", quantity: "2 large", unit: "diced" },
-      { name: "Tomatoes", quantity: "3 medium", unit: "chopped" },
-      { name: "Garlic", quantity: "4 cloves", unit: "minced" },
-      { name: "Ginger", quantity: "1 inch", unit: "grated" },
-      { name: "Cumin seeds", quantity: "1 tsp", unit: "" },
-      { name: "Coriander powder", quantity: "2 tsp", unit: "" },
-      { name: "Turmeric powder", quantity: "1/2 tsp", unit: "" },
+      { name: "Paneer", quantity: "400g", unit: "cubed" },
+      { name: "Butter", quantity: "3 tbsp", unit: "" },
+      { name: "Onions", quantity: "2 large", unit: "finely chopped" },
+      { name: "Tomatoes", quantity: "4 large", unit: "pureed" },
+      { name: "Cashews", quantity: "1/4 cup", unit: "" },
+      { name: "Ginger-garlic paste", quantity: "1 tbsp", unit: "" },
       { name: "Red chili powder", quantity: "1 tsp", unit: "" },
-      { name: "Mixed vegetables", quantity: "500g", unit: "(carrots, beans, peas)" },
-      { name: "Coconut milk", quantity: "400ml", unit: "can" },
-      { name: "Fresh cilantro", quantity: "1/4 cup", unit: "chopped" },
-      { name: "Salt", quantity: "to taste", unit: "" },
-      { name: "Oil", quantity: "2 tbsp", unit: "" }
+      { name: "Garam masala", quantity: "1 tsp", unit: "" },
+      { name: "Heavy cream", quantity: "1/2 cup", unit: "" },
+      { name: "Fresh cilantro", quantity: "2 tbsp", unit: "chopped" },
+      { name: "Salt", quantity: "to taste", unit: "" }
     ],
     instructions: [
-      "Heat oil in a large pan over medium heat. Add cumin seeds and let them splutter for 30 seconds.",
-      "Add diced onions and sauté until golden brown, about 5-7 minutes.",
-      "Add minced garlic and grated ginger. Cook for another minute until fragrant.",
-      "Add chopped tomatoes and cook until they break down and become pulpy, about 8-10 minutes.",
-      "Add all the spice powders (coriander, turmeric, red chili) and cook for 1-2 minutes, stirring constantly to prevent burning.",
-      "Add the mixed vegetables and stir well to coat with the spice mixture. Cook for 5 minutes.",
-      "Pour in the coconut milk and bring to a gentle simmer. Season with salt to taste.",
-      "Cover and let it simmer for 15-20 minutes until vegetables are tender and the curry has thickened.",
-      "Taste and adjust seasoning if needed. Garnish with fresh cilantro before serving.",
-      "Serve hot with steamed rice, naan, or roti. Enjoy your homemade curry!"
+      "Soak cashews in warm water for 15 minutes, then blend into a smooth paste.",
+      "Heat 2 tbsp butter in a pan and lightly fry paneer cubes until golden. Set aside.",
+      "In the same pan, add remaining butter and sauté onions until golden brown.",
+      "Add ginger-garlic paste and cook for 1 minute until fragrant.",
+      "Add tomato puree and cook until oil separates, about 10-12 minutes.",
+      "Add red chili powder, garam masala, and salt. Mix well.",
+      "Add the cashew paste and cook for 2-3 minutes, stirring continuously.",
+      "Add heavy cream and mix well. Let it simmer for 5 minutes.",
+      "Gently add the fried paneer and simmer for 3-4 minutes.",
+      "Garnish with fresh cilantro and serve hot with naan or rice."
     ]
   },
-  popularRecipe: {
-    "Paneer Butter Masala": {
-      name: "Paneer Butter Masala",
-      prepTime: "20 mins",
-      cookTime: "25 mins",
-      serves: "4",
-      cuisine: "North Indian",
-      ingredients: [
-        { name: "Paneer", quantity: "400g", unit: "cubed" },
-        { name: "Butter", quantity: "3 tbsp", unit: "" },
-        { name: "Onions", quantity: "2 large", unit: "finely chopped" },
-        { name: "Tomatoes", quantity: "4 large", unit: "pureed" },
-        { name: "Cashews", quantity: "1/4 cup", unit: "" },
-        { name: "Ginger-garlic paste", quantity: "1 tbsp", unit: "" },
-        { name: "Red chili powder", quantity: "1 tsp", unit: "" },
-        { name: "Garam masala", quantity: "1 tsp", unit: "" },
-        { name: "Heavy cream", quantity: "1/2 cup", unit: "" },
-        { name: "Fresh cilantro", quantity: "2 tbsp", unit: "chopped" },
-        { name: "Salt", quantity: "to taste", unit: "" }
-      ],
-      instructions: [
-        "Soak cashews in warm water for 15 minutes, then blend into a smooth paste.",
-        "Heat 2 tbsp butter in a pan and lightly fry paneer cubes until golden. Set aside.",
-        "In the same pan, add remaining butter and sauté onions until golden brown.",
-        "Add ginger-garlic paste and cook for 1 minute until fragrant.",
-        "Add tomato puree and cook until oil separates, about 10-12 minutes.",
-        "Add red chili powder, garam masala, and salt. Mix well.",
-        "Add the cashew paste and cook for 2-3 minutes, stirring continuously.",
-        "Add heavy cream and mix well. Let it simmer for 5 minutes.",
-        "Gently add the fried paneer and simmer for 3-4 minutes.",
-        "Garnish with fresh cilantro and serve hot with naan or rice."
-      ]
-    },
-    "Butter Chicken": {
-      name: "Butter Chicken",
-      prepTime: "30 mins",
-      cookTime: "40 mins",
-      serves: "4-6",
-      cuisine: "North Indian",
-      ingredients: [
-        { name: "Chicken", quantity: "1 kg", unit: "boneless, cubed" },
-        { name: "Yogurt", quantity: "1/2 cup", unit: "" },
-        { name: "Lemon juice", quantity: "2 tbsp", unit: "" },
-        { name: "Ginger-garlic paste", quantity: "2 tbsp", unit: "" },
-        { name: "Red chili powder", quantity: "1 tsp", unit: "" },
-        { name: "Garam masala", quantity: "1 tsp", unit: "" },
-        { name: "Butter", quantity: "4 tbsp", unit: "" },
-        { name: "Onions", quantity: "2 large", unit: "chopped" },
-        { name: "Tomatoes", quantity: "4 large", unit: "pureed" },
-        { name: "Heavy cream", quantity: "3/4 cup", unit: "" },
-        { name: "Kasuri methi", quantity: "1 tsp", unit: "" },
-        { name: "Salt", quantity: "to taste", unit: "" }
-      ],
-      instructions: [
-        "Marinate chicken with yogurt, lemon juice, half the ginger-garlic paste, red chili powder, and salt for at least 30 minutes.",
-        "Heat 2 tbsp butter in a pan and cook marinated chicken until done. Set aside.",
-        "In the same pan, add remaining butter and sauté onions until golden.",
-        "Add remaining ginger-garlic paste and cook for 1 minute.",
-        "Add tomato puree and cook until oil separates, about 15 minutes.",
-        "Add garam masala and cook for another minute.",
-        "Blend the mixture smooth and return to pan.",
-        "Add heavy cream and bring to a gentle simmer.",
-        "Add cooked chicken and simmer for 10 minutes.",
-        "Sprinkle kasuri methi, adjust seasoning, and serve hot."
-      ]
-    }
+  "Butter Chicken": {
+    name: "Butter Chicken",
+    prepTime: "30 mins",
+    cookTime: "40 mins",
+    serves: "4-6",
+    cuisine: "North Indian",
+    ingredients: [
+      { name: "Chicken", quantity: "1 kg", unit: "boneless, cubed" },
+      { name: "Yogurt", quantity: "1/2 cup", unit: "" },
+      { name: "Lemon juice", quantity: "2 tbsp", unit: "" },
+      { name: "Ginger-garlic paste", quantity: "2 tbsp", unit: "" },
+      { name: "Red chili powder", quantity: "1 tsp", unit: "" },
+      { name: "Garam masala", quantity: "1 tsp", unit: "" },
+      { name: "Butter", quantity: "4 tbsp", unit: "" },
+      { name: "Onions", quantity: "2 large", unit: "chopped" },
+      { name: "Tomatoes", quantity: "4 large", unit: "pureed" },
+      { name: "Heavy cream", quantity: "3/4 cup", unit: "" },
+      { name: "Kasuri methi", quantity: "1 tsp", unit: "" },
+      { name: "Salt", quantity: "to taste", unit: "" }
+    ],
+    instructions: [
+      "Marinate chicken with yogurt, lemon juice, half the ginger-garlic paste, red chili powder, and salt for at least 30 minutes.",
+      "Heat 2 tbsp butter in a pan and cook marinated chicken until done. Set aside.",
+      "In the same pan, add remaining butter and sauté onions until golden.",
+      "Add remaining ginger-garlic paste and cook for 1 minute.",
+      "Add tomato puree and cook until oil separates, about 15 minutes.",
+      "Add garam masala and cook for another minute.",
+      "Blend the mixture smooth and return to pan.",
+      "Add heavy cream and bring to a gentle simmer.",
+      "Add cooked chicken and simmer for 10 minutes.",
+      "Sprinkle kasuri methi, adjust seasoning, and serve hot."
+    ]
   }
 };
 
 export default function RecipeScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
+  const { currentRecipe } = useRecipe();
+  const { currentPopularRecipe } = usePopularRecipe();
+  const [expandedIngredients, setExpandedIngredients] = useState(false);
   
   // Get recipe data based on source
   const getRecipeData = () => {
     if (params.source === 'home') {
-      return mockRecipeData.homeScreen;
+      // Use AI-generated recipe if available, otherwise show a message
+      if (currentRecipe) {
+        return currentRecipe;
+      } else {
+        // Return a placeholder recipe if no AI recipe is available
+        return {
+          name: "Recipe Not Found",
+          prepTime: "0 mins",
+          cookTime: "0 mins",
+          serves: "0",
+          cuisine: "Unknown",
+          ingredients: [],
+          instructions: ["Please go back and generate a new recipe."]
+        };
+      }
     } else if (params.source === 'popular' && params.recipeName) {
+      // Use AI-generated popular recipe if available
+      if (currentPopularRecipe) {
+        return currentPopularRecipe;
+      }
+      
+      // Fallback to mock data
       const recipeName = params.recipeName as string;
-      return mockRecipeData.popularRecipe[recipeName as keyof typeof mockRecipeData.popularRecipe] || mockRecipeData.popularRecipe["Paneer Butter Masala"];
+      return mockPopularRecipeData[recipeName as keyof typeof mockPopularRecipeData] || mockPopularRecipeData["Paneer Butter Masala"];
     }
-    return mockRecipeData.homeScreen;
+    return mockPopularRecipeData["Paneer Butter Masala"];
   };
 
   const recipe = getRecipeData();
-  const [expandedIngredients, setExpandedIngredients] = useState(false);
+  const isPopularRecipe = params.source === 'popular' && currentPopularRecipe;
 
   // Get mock video data based on recipe name (will be replaced with YouTube API)
   const getVideoData = () => {
@@ -163,6 +154,24 @@ export default function RecipeScreen() {
     </View>
   );
 
+  // Show nutrition info if available
+  const NutritionCard = ({ label, value }: { label: string; value: string }) => (
+    <View style={styles.nutritionCard}>
+      <Text style={styles.nutritionLabel}>{label}</Text>
+      <Text style={styles.nutritionValue}>{value}</Text>
+    </View>
+  );
+
+  // Show tips if available (for popular recipes)
+  const TipsCard = ({ tip, index }: { tip: string; index: number }) => (
+    <View style={styles.tipCard}>
+      <View style={styles.tipNumber}>
+        <Text style={styles.tipNumberText}>{index + 1}</Text>
+      </View>
+      <Text style={styles.tipText}>{tip}</Text>
+    </View>
+  );
+
   return (
     <LinearGradient colors={["#fffef9", "#ffe8d6"]} style={{ flex: 1 }}>
       <SafeAreaView style={{ flex: 1 }}>
@@ -189,6 +198,18 @@ export default function RecipeScreen() {
                   {params.source === 'home' ? 'AI Generated Recipe' : 'Popular Recipe'}
                 </Text>
               </View>
+              
+              {/* Description for popular recipes - Horizontal layout */}
+              {isPopularRecipe && (recipe as PopularRecipe).description && (
+                <View style={styles.descriptionContainer}>
+                  <View style={styles.descriptionIcon}>
+                    <Text style={styles.descriptionIconText}>📖</Text>
+                  </View>
+                  <Text style={styles.recipeDescription}>
+                    {(recipe as PopularRecipe).description}
+                  </Text>
+                </View>
+              )}
             </View>
 
             {/* Info Cards Section */}
@@ -199,19 +220,54 @@ export default function RecipeScreen() {
               <InfoCard icon="🌍" label="Cuisine" value={recipe.cuisine} />
             </View>
 
+            {/* Additional info for popular recipes */}
+            {isPopularRecipe && (
+              <View style={styles.additionalInfoContainer}>
+                <View style={styles.additionalInfoRow}>
+                  <View style={styles.additionalInfoCard}>
+                    <Text style={styles.additionalInfoLabel}>Difficulty</Text>
+                    <Text style={styles.additionalInfoValue}>
+                      {(recipe as PopularRecipe).difficulty || 'Medium'}
+                    </Text>
+                  </View>
+                  <View style={styles.additionalInfoCard}>
+                    <Text style={styles.additionalInfoLabel}>Rating</Text>
+                    <Text style={styles.additionalInfoValue}>
+                      {(recipe as PopularRecipe).rating || '4.5/5'}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            )}
+
+            {/* Nutrition Info Section - Only show for AI recipes */}
+            {params.source === 'home' && recipe.nutritionInfo && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>📊 Nutrition Info</Text>
+                <View style={styles.nutritionContainer}>
+                  <NutritionCard label="Calories" value={recipe.nutritionInfo.calories} />
+                  <NutritionCard label="Protein" value={recipe.nutritionInfo.protein} />
+                  <NutritionCard label="Carbs" value={recipe.nutritionInfo.carbs} />
+                  <NutritionCard label="Fat" value={recipe.nutritionInfo.fat} />
+                </View>
+              </View>
+            )}
+
             {/* Ingredients Section */}
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>🥘 Ingredients</Text>
-                <TouchableOpacity 
-                  onPress={() => setExpandedIngredients(!expandedIngredients)}
-                  style={styles.expandButton}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.expandButtonText}>
-                    {expandedIngredients ? 'Show Less' : 'Show All'} ({recipe.ingredients.length})
-                  </Text>
-                </TouchableOpacity>
+                {recipe.ingredients.length > 6 && (
+                  <TouchableOpacity 
+                    onPress={() => setExpandedIngredients(!expandedIngredients)}
+                    style={styles.expandButton}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.expandButtonText}>
+                      {expandedIngredients ? 'Show Less' : 'Show All'} ({recipe.ingredients.length})
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
               
               <View style={styles.ingredientsContainer}>
@@ -245,6 +301,18 @@ export default function RecipeScreen() {
                 ))}
               </View>
             </View>
+
+            {/* Tips Section - Only for popular recipes */}
+            {isPopularRecipe && (recipe as PopularRecipe).tips && (recipe as PopularRecipe).tips.length > 0 && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>💡 Cooking Tips</Text>
+                <View style={styles.tipsContainer}>
+                  {(recipe as PopularRecipe).tips.map((tip, index) => (
+                    <TipsCard key={index} tip={tip} index={index} />
+                  ))}
+                </View>
+              </View>
+            )}
 
             {/* Recipe Videos Section - Only for Popular Recipes */}
             {params.source === 'popular' && (
@@ -344,6 +412,41 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 8,
   },
+  recipeDescription: {
+    fontSize: 14,
+    color: '#6B7280',
+    textAlign: 'left',
+    lineHeight: 20,
+    flex: 1,
+  },
+  descriptionContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    marginHorizontal: 24,
+    marginBottom: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  descriptionIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#FF6B6B',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+    marginTop: 2,
+  },
+  descriptionIconText: {
+    fontSize: 16,
+    color: '#fff',
+  },
   infoCardsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -375,6 +478,36 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   infoCardValue: {
+    fontSize: 16,
+    color: '#333',
+    fontWeight: '700',
+  },
+  additionalInfoContainer: {
+    marginBottom: 32,
+  },
+  additionalInfoRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  additionalInfoCard: {
+    flex: 1,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 16,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  additionalInfoLabel: {
+    fontSize: 14,
+    color: '#6B7280',
+    fontWeight: '500',
+    marginBottom: 4,
+  },
+  additionalInfoValue: {
     fontSize: 16,
     color: '#333',
     fontWeight: '700',
@@ -485,6 +618,46 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     fontWeight: '400',
   },
+  tipsContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  tipCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 16,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  tipNumber: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#10B981',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+    marginTop: 2,
+  },
+  tipNumberText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  tipText: {
+    flex: 1,
+    fontSize: 16,
+    color: '#333',
+    lineHeight: 22,
+    fontWeight: '400',
+  },
   actionButtonsContainer: {
     flexDirection: 'row',
     gap: 12,
@@ -529,6 +702,36 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     letterSpacing: 0.5,
+  },
+  // Nutrition Section Styles
+  nutritionContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-around',
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  nutritionCard: {
+    alignItems: 'center',
+    marginHorizontal: 10,
+    marginVertical: 8,
+  },
+  nutritionLabel: {
+    fontSize: 14,
+    color: '#6B7280',
+    fontWeight: '500',
+    marginBottom: 4,
+  },
+  nutritionValue: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#333',
   },
   // Video Section Styles
   videosSectionSubtitle: {

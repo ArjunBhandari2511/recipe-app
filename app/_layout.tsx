@@ -1,9 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
+import { PopularRecipeProvider } from '../src/context/PopularRecipeContext';
+import { RecipeProvider } from '../src/context/RecipeContext';
 
 export default function Layout() {
   return (
-    <Tabs
+    <RecipeProvider>
+      <PopularRecipeProvider>
+        <Tabs
       screenOptions={({ route }) => ({
         tabBarActiveTintColor: '#FF6B6B',
         tabBarInactiveTintColor: '#9CA3AF',
@@ -45,13 +49,22 @@ export default function Layout() {
           href: null, // This hides it from the tab bar
         }} 
       />
-      <Tabs.Screen 
+            <Tabs.Screen 
         name="LoadingRecipe" 
         options={{ 
           title: 'Loading Recipe',
           href: null, // This hides it from the tab bar
         }} 
       />
-    </Tabs>
+      <Tabs.Screen 
+        name="LoadingPopularRecipe" 
+        options={{ 
+          title: 'Loading Popular Recipe',
+          href: null, // This hides it from the tab bar
+        }} 
+      />
+        </Tabs>
+      </PopularRecipeProvider>
+    </RecipeProvider>
   );
 }

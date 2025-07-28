@@ -1,11 +1,14 @@
 import Slider from '@react-native-community/slider';
+import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
-import { Image, Platform, View as RNView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableNativeFeedback, TouchableOpacity, View } from 'react-native';
+import React, { useState } from 'react';
+import { Alert, Image, Platform, View as RNView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableNativeFeedback, TouchableOpacity, View } from 'react-native';
 import DropDownPicker from 'react-native-dropdown-picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ChefBro from '../assets/Chef-Bro.svg';
+import { ErrorDisplay } from '../src/components/ErrorDisplay';
+import { useRecipe } from '../src/context/RecipeContext';
 
 const SPICE_LEVELS = [
   { label: 'Spicy', value: 'Spicy', emoji: '🌶️' },
@@ -31,6 +34,14 @@ const CUISINE_OPTIONS = [
 
 export default function HomeScreen() {
   const router = useRouter();
+  const { generateNewRecipe, isLoading, error, clearError, clearRecipe } = useRecipe();
+  
+  // Clear recipe context when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      clearRecipe();
+    }, [clearRecipe])
+  );
   
   // Ingredients
   const [ingredient, setIngredient] = useState('');
@@ -70,8 +81,40 @@ export default function HomeScreen() {
   const removeExclude = (index: number) => {
     setExcludes(excludes.filter((_, i) => i !== index));
   };
-  const handleGenerate = () => {
-    router.push({ pathname: '/LoadingRecipe' as any });
+  const handleGenerate = async () => {
+    // Validate inputs
+    if (ingredients.length === 0) {
+      Alert.alert('Missing Ingredients', 'Please add at least one ingredient to generate a recipe.');
+      return;
+    }
+
+    try {
+      // Prepare recipe request
+      const recipeRequest = {
+        ingredients,
+        excludes,
+        spiceLevel,
+        servings,
+        dietary: dietary || undefined,
+        cuisine: cuisine || undefined,
+      };
+
+      // Generate recipe using AI
+      await generateNewRecipe(recipeRequest);
+      
+      // Clear all input fields for next search
+      setIngredients([]);
+      setExcludes([]);
+      setSpiceLevel('Medium');
+      setServings(4);
+      setDietary(null);
+      setCuisine(null);
+      
+      // Navigate to loading screen
+      router.push({ pathname: '/LoadingRecipe' as any });
+    } catch (err) {
+      Alert.alert('Error', 'Failed to generate recipe. Please try again.');
+    }
   };
 
   const ButtonComponent = Platform.OS === 'android' ? TouchableNativeFeedback : TouchableOpacity;
@@ -260,6 +303,16 @@ export default function HomeScreen() {
             />
             <Text style={{ marginTop: 16, fontSize: 18, color: '#FF6B6B', fontWeight: 'bold' }}>Generating your unique recipe...</Text>
           </View>
+        )}
+        {error && (
+          <ErrorDisplay 
+            error={error}
+            onRetry={() => {
+              clearError();
+              handleGenerate();
+            }}
+            onDismiss={clearError}
+          />
         )}
       </SafeAreaView>
     </LinearGradient>

@@ -1,9 +1,13 @@
+import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Animated, FlatList, Image, Platform, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ChefOrange from '../assets/Chef-Orange.svg';
+import { ErrorDisplay } from '../src/components/ErrorDisplay';
+import { usePopularRecipe } from '../src/context/PopularRecipeContext';
+import { getTrendingSuggestions } from '../src/services/popularRecipeService';
 
 const trendingRecipes = [
   {
@@ -56,21 +60,28 @@ const trendingRecipes = [
   },
 ];
 
-const trendingBadges = [
-  { name: 'Butter Chicken', color: '#FFE0B2' },
-  { name: 'Ramen', color: '#E1F5FE' },
-  { name: 'Pasta Bake', color: '#FFECB3' },
-  { name: 'Tacos', color: '#C8E6C9' },
-  { name: 'Paneer Tikka', color: '#F8BBD0' },
-];
-
 export default function PopularRecipeScreen() {
   const router = useRouter();
+  const { searchPopularRecipe, isLoading, error, clearError, currentPopularRecipe, clearPopularRecipe } = usePopularRecipe();
   const [dish, setDish] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
-  const handleFindRecipe = () => {
+  const trendingSuggestions = getTrendingSuggestions();
+
+  // Clear popular recipe context when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      clearPopularRecipe();
+    }, [clearPopularRecipe])
+  );
+
+  const handleFindRecipe = async () => {
+    if (!dish.trim()) {
+      Alert.alert('Invalid Entry', 'Please enter a dish name to search.');
+      return;
+    }
+
     // Pulse animation
     Animated.sequence([
       Animated.timing(scaleAnim, {
@@ -83,21 +94,43 @@ export default function PopularRecipeScreen() {
         duration: 120,
         useNativeDriver: true,
       }),
-    ]).start(() => {
-      setLoading(true);
-      setTimeout(() => {
-        setLoading(false);
-        if (dish) {
-          // Navigate to Recipe screen with selected dish
-          router.push({
-            pathname: '/Recipe',
-            params: { source: 'popular', recipeName: dish }
-          });
-        } else {
-          Alert.alert('Invalid Entry', 'Please enter a dish name to search.');
-        }
-      }, 1200);
+    ]).start(async () => {
+      try {
+        // Search for popular recipe using AI
+        await searchPopularRecipe({
+          dishName: dish.trim(),
+          cuisine: undefined, // Can be enhanced with cuisine selection
+          dietary: undefined, // Can be enhanced with dietary selection
+          spiceLevel: undefined, // Can be enhanced with spice level selection
+        });
+
+        // Clear search input for next search
+        setDish('');
+        setShowSuggestions(false);
+
+        // Navigate to loading screen for popular recipe
+        router.push({
+          pathname: '/LoadingPopularRecipe',
+          params: { recipeName: dish.trim() }
+        });
+      } catch (err) {
+        console.error('Recipe search failed:', err);
+      }
     });
+  };
+
+  const handleSuggestionPress = (suggestion: string) => {
+    setDish(suggestion);
+    setShowSuggestions(false);
+  };
+
+  const handleInputFocus = () => {
+    setShowSuggestions(true);
+  };
+
+  const handleInputBlur = () => {
+    // Delay hiding suggestions to allow for touch events
+    setTimeout(() => setShowSuggestions(false), 200);
   };
 
   return (
@@ -114,17 +147,47 @@ export default function PopularRecipeScreen() {
               <Text style={styles.heading}>Search for a Popular Recipe</Text>
               <Text style={styles.subheading}>Know What You Want?</Text>
             </View>
+            
             <View style={styles.inputSection}>
               <Text style={styles.label}>Enter the name of the dish you'd like to make</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="e.g., Paneer Butter Masala"
-                placeholderTextColor="#9CA3AF"
-                value={dish}
-                onChangeText={setDish}
-                returnKeyType="search"
-              />
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="e.g., Paneer Butter Masala"
+                  placeholderTextColor="#9CA3AF"
+                  value={dish}
+                  onChangeText={setDish}
+                  onFocus={handleInputFocus}
+                  onBlur={handleInputBlur}
+                  returnKeyType="search"
+                />
+                {showSuggestions && dish.length > 0 && (
+                  <View style={styles.suggestionsContainer}>
+                    <ScrollView 
+                      style={styles.suggestionsList}
+                      showsVerticalScrollIndicator={false}
+                      nestedScrollEnabled={true}
+                    >
+                      {trendingSuggestions
+                        .filter(suggestion => 
+                          suggestion.toLowerCase().includes(dish.toLowerCase())
+                        )
+                        .slice(0, 5)
+                        .map((suggestion, index) => (
+                          <TouchableOpacity
+                            key={index}
+                            style={styles.suggestionItem}
+                            onPress={() => handleSuggestionPress(suggestion)}
+                          >
+                            <Text style={styles.suggestionText}>{suggestion}</Text>
+                          </TouchableOpacity>
+                        ))}
+                    </ScrollView>
+                  </View>
+                )}
+              </View>
             </View>
+
             {/* Top 5 Trending This Week Badges */}
             <View style={styles.badgeSection}>
               <Text style={styles.badgeHeading}>Top 5 Trending This Week</Text>
@@ -133,7 +196,10 @@ export default function PopularRecipeScreen() {
                   <TouchableOpacity
                     key={badge.name}
                     style={[styles.badgePill, { backgroundColor: badge.color }]}
-                    onPress={() => setDish(badge.name)}
+                    onPress={() => {
+                      setDish(badge.name);
+                      setShowSuggestions(false);
+                    }}
                     activeOpacity={0.85}
                   >
                     <Text style={styles.badgeText}>{badge.name}</Text>
@@ -141,15 +207,22 @@ export default function PopularRecipeScreen() {
                 ))}
               </View>
             </View>
+
             <Animated.View style={{ width: '100%', transform: [{ scale: scaleAnim }] }}>
-              <TouchableOpacity style={styles.button} onPress={handleFindRecipe} activeOpacity={0.85} disabled={loading}>
-                {loading ? (
+              <TouchableOpacity 
+                style={[styles.button, isLoading && styles.buttonDisabled]} 
+                onPress={handleFindRecipe} 
+                activeOpacity={0.85} 
+                disabled={isLoading}
+              >
+                {isLoading ? (
                   <ActivityIndicator color="#fff" />
                 ) : (
-                  <Text style={styles.buttonText}>Find Recipe</Text>
+                  <Text style={styles.buttonText}>🔍 Find Recipe</Text>
                 )}
               </TouchableOpacity>
             </Animated.View>
+
             {/* Recently Trending Recipes Section */}
             <View style={styles.trendingSection}>
               <Text style={styles.trendingHeading}>Recently Trending Recipes</Text>
@@ -159,28 +232,44 @@ export default function PopularRecipeScreen() {
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.trendingList}
-              renderItem={({ item }) => (
-                <TouchableOpacity 
-                  style={styles.trendingCard}
-                  onPress={() => {
-                    router.push({
-                      pathname: '/Recipe',
-                      params: { source: 'popular', recipeName: item.name }
-                    });
-                  }}
-                  activeOpacity={0.85}
-                >
-                  <Image source={item.image} style={styles.trendingImage} />
-                  <View style={styles.badgeContainer}>
-                    <Text style={styles.cornerBadge}>{item.tag}</Text>
-                  </View>
-                  <View style={styles.textOverlay}>
-                    <Text style={styles.trendingName}>{item.name}</Text>
-                  </View>
-                </TouchableOpacity>
-              )}
+                renderItem={({ item }) => (
+                  <TouchableOpacity 
+                    style={styles.trendingCard}
+                                        onPress={() => {
+                      setDish(item.name);
+                      // Auto-search when trending recipe is selected
+                      setTimeout(() => {
+                        searchPopularRecipe({
+                          dishName: item.name,
+                          cuisine: undefined,
+                          dietary: undefined,
+                          spiceLevel: undefined,
+                        }).then(() => {
+                          // Clear search input for next search
+                          setDish('');
+                          setShowSuggestions(false);
+                          
+                          router.push({
+                            pathname: '/LoadingPopularRecipe',
+                            params: { recipeName: item.name }
+                          });
+                        });
+                      }, 100);
+                    }}
+                    activeOpacity={0.85}
+                  >
+                    <Image source={item.image} style={styles.trendingImage} />
+                    <View style={styles.badgeContainer}>
+                      <Text style={styles.cornerBadge}>{item.tag}</Text>
+                    </View>
+                    <View style={styles.textOverlay}>
+                      <Text style={styles.trendingName}>{item.name}</Text>
+                    </View>
+                  </TouchableOpacity>
+                )}
               />
             </View>
+
             {/* Newsletter Section */}
             <View style={styles.newsletterSection}>
               <View style={styles.newsletterCard}>
@@ -193,10 +282,30 @@ export default function PopularRecipeScreen() {
             </View>
           </View>
         </ScrollView>
+        
+        {/* Error Display */}
+        {error && (
+          <ErrorDisplay 
+            error={error}
+            onRetry={() => {
+              clearError();
+              handleFindRecipe();
+            }}
+            onDismiss={clearError}
+          />
+        )}
       </SafeAreaView>
     </LinearGradient>
   );
 }
+
+const trendingBadges = [
+  { name: 'Butter Chicken', color: '#FFE0B2' },
+  { name: 'Ramen', color: '#E1F5FE' },
+  { name: 'Pasta Bake', color: '#FFECB3' },
+  { name: 'Tacos', color: '#C8E6C9' },
+  { name: 'Paneer Tikka', color: '#F8BBD0' },
+];
 
 const styles = StyleSheet.create({
   container: {
@@ -227,6 +336,9 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginBottom: 6,
   },
+  inputContainer: {
+    position: 'relative',
+  },
   input: {
     width: '100%',
     backgroundColor: '#F9F9F9',
@@ -237,6 +349,36 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E5E7EB',
     marginBottom: 4,
+  },
+  suggestionsContainer: {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    zIndex: 1000,
+    maxHeight: 200,
+  },
+  suggestionsList: {
+    padding: 8,
+  },
+  suggestionItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  suggestionText: {
+    fontSize: 16,
+    color: '#333',
   },
   button: {
     width: '100%',
@@ -251,6 +393,10 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
     elevation: 3,
     marginTop: 8,
+  },
+  buttonDisabled: {
+    backgroundColor: '#9CA3AF',
+    shadowColor: '#9CA3AF',
   },
   buttonText: {
     color: '#fff',
